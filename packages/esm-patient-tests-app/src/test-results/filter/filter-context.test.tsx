@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { vi, describe, it, expect, test } from 'vitest';
+import { afterEach, beforeEach, vi, describe, it, expect, test } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FilterProvider, FilterContext } from './filter-context';
@@ -418,6 +418,79 @@ describe('FilterContext', () => {
 
       const groups = screen.getAllByTestId(/^group-/);
       expect(groups.length).toBeGreaterThan(0);
+    });
+
+    describe('in a timezone ahead of UTC', () => {
+      const originalTimezone = process.env.TZ;
+
+      beforeEach(() => {
+        process.env.TZ = 'Asia/Kolkata';
+      });
+
+      afterEach(() => {
+        process.env.TZ = originalTimezone;
+      });
+
+      const TableDatesTestComponent = () => {
+        const { tableData } = useContext(FilterContext);
+
+        return <div data-testid="table-dates">{tableData?.map((group) => group.date).join(', ')}</div>;
+      };
+
+      const rootsWithObs = (obsDatetimes: Array<string>): Array<TreeNode> => [
+        {
+          display: 'Hematology',
+          flatName: 'Hematology',
+          hasData: true,
+          subSets: [
+            {
+              display: 'Complete Blood Count',
+              flatName: 'Hematology-Complete Blood Count',
+              hasData: true,
+              subSets: [
+                {
+                  display: 'Hemoglobin',
+                  flatName: 'Hematology-Complete Blood Count-Hemoglobin',
+                  hasData: true,
+                  obs: obsDatetimes.map((obsDatetime, index) => ({
+                    obsDatetime,
+                    value: `${index + 12}`,
+                    interpretation: 'NORMAL' as const,
+                  })),
+                },
+              ],
+            },
+          ],
+        },
+      ];
+
+      it('should put results on different local days in separate groups', async () => {
+        render(
+          <FilterProvider
+            roots={rootsWithObs(['2024-01-15T17:00:00.000Z', '2024-01-15T20:00:00.000Z'])}
+            isLoading={false}
+          >
+            <TableDatesTestComponent />
+          </FilterProvider>,
+        );
+
+        // 10:30 PM on 15 January and 1:30 AM on 16 January in Kolkata, both on 15 January in UTC
+        await waitFor(() => expect(screen.getByTestId('table-dates')).toHaveTextContent('2024-01-16, 2024-01-15'));
+      });
+
+      it('should keep results on the same local day in one group', async () => {
+        render(
+          <FilterProvider
+            roots={rootsWithObs(['2024-01-15T17:00:00.000Z', '2024-01-14T20:00:00.000Z'])}
+            isLoading={false}
+          >
+            <TableDatesTestComponent />
+          </FilterProvider>,
+        );
+
+        // 10:30 PM and 1:30 AM on 15 January in Kolkata, but 15 and 14 January in UTC
+        await waitFor(() => expect(screen.getByTestId('table-dates')).toHaveTextContent('2024-01-15'));
+      });
     });
   });
 
