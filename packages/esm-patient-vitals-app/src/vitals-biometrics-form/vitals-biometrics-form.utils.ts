@@ -42,16 +42,6 @@ export function isValueWithinReferenceRange(
     : true;
 }
 
-// Convert age into an integer (whole number)
-export function extractNumbers(str: string) {
-  const regex = /\d+/g;
-  const match = str.match(regex);
-  if (!match) {
-    return null;
-  }
-  return parseInt(match[0], 10);
-}
-
 export function getMuacColorCode(age: number, muac: number, setColorCode: (color) => void) {
   // Age brackets and MUAC cut-offs follow the Uganda Ministry of Health IMAM Guidelines
   // (Jan 2016), Table 2: Summary of Classification of Acute Malnutrition.

@@ -2,6 +2,7 @@ import React from 'react';
 import { vi, describe, it, expect } from 'vitest';
 import { act, screen, render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import dayjs from 'dayjs';
 import {
   type FetchResponse,
   showSnackbar,
@@ -508,6 +509,50 @@ describe('VitalsBiometricsForm', () => {
       title: 'Error saving Vitals and Biometrics',
     });
   });
+
+  it.each([
+    ['11 months', 11, 'month', 12.8, 'green'],
+    ['50 weeks', 50, 'week', 12.8, 'green'],
+    ['8 months', 8, 'month', 11, 'red'],
+    ['3 years', 3, 'year', 12, 'yellow'],
+    ['40 years', 40, 'year', 12.8, 'red'],
+  ])(
+    'colors the MUAC of a patient aged %s by their age in years',
+    async (_ageLabel, ageValue, ageUnit, muacInCm, expectedColor) => {
+      const user = userEvent.setup();
+
+      mockUseConfig.mockReturnValue({
+        ...getDefaultsFromConfigSchema(configSchema),
+        ...mockVitalsConfig,
+        vitals: {
+          ...getDefaultsFromConfigSchema(configSchema).vitals,
+          ...mockVitalsConfig.vitals,
+          useMuacColors: true,
+        },
+      } as ConfigObject);
+
+      const props: VitalsFormWorkspaceDefinitionProps = {
+        ...defaultProps,
+        windowProps: {
+          ...defaultProps.windowProps,
+          patient: {
+            ...mockPatient,
+            birthDate: dayjs()
+              .subtract(ageValue, ageUnit as dayjs.ManipulateType)
+              .format('YYYY-MM-DD'),
+          },
+        },
+      };
+
+      render(<VitalsAndBiometricsForm {...props} />);
+
+      const muac = screen.getByRole('spinbutton', { name: /muac/i });
+      await user.type(muac, muacInCm.toString());
+
+      // eslint-disable-next-line testing-library/no-node-access
+      await waitFor(() => expect(muac.closest(`.${expectedColor}`)).toBeInTheDocument());
+    },
+  );
 
   it('hides BMI field when bmiMinimumAge is set and patient is under the minimum age', async () => {
     const minorPatient = {
