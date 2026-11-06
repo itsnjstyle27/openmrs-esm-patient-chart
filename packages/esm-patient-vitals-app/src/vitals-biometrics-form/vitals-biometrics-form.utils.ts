@@ -37,9 +37,11 @@ export function isValueWithinReferenceRange(
     return true;
   }
 
-  return isNumber(concept?.lowAbsolute) && isNumber(concept?.hiAbsolute)
-    ? Number(value) >= Number(concept.lowAbsolute) && Number(value) <= Number(concept.hiAbsolute)
-    : true;
+  // A concept can have only one of the limits.
+  return (
+    (!isNumber(concept.lowAbsolute) || Number(value) >= concept.lowAbsolute) &&
+    (!isNumber(concept.hiAbsolute) || Number(value) <= concept.hiAbsolute)
+  );
 }
 
 // Convert age into an integer (whole number)

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getMuacColorCode } from './vitals-biometrics-form.utils';
+import { type ConceptMetadata } from '../common';
+import { getMuacColorCode, isValueWithinReferenceRange } from './vitals-biometrics-form.utils';
 
 describe('getMuacColorCode', () => {
   it.each([
@@ -29,5 +30,44 @@ describe('getMuacColorCode', () => {
       result = color;
     });
     expect(result).toBe(expectedColor);
+  });
+});
+
+describe('isValueWithinReferenceRange', () => {
+  const metadata = (limits: Partial<ConceptMetadata>) =>
+    [{ uuid: 'concept-uuid', ...limits }] as Array<ConceptMetadata>;
+
+  it('checks a value against both absolute limits', () => {
+    const concepts = metadata({ lowAbsolute: 10, hiAbsolute: 100 });
+
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 9)).toBe(false);
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 10)).toBe(true);
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 100)).toBe(true);
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 101)).toBe(false);
+  });
+
+  it('checks a value against the upper limit when it is the only one', () => {
+    const concepts = metadata({ lowAbsolute: null, hiAbsolute: 100 });
+
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 100)).toBe(true);
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 101)).toBe(false);
+  });
+
+  it('checks a value against the lower limit when it is the only one', () => {
+    const concepts = metadata({ lowAbsolute: 10, hiAbsolute: null });
+
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 9)).toBe(false);
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 10)).toBe(true);
+  });
+
+  it('accepts any value when the concept has no absolute limits', () => {
+    const concepts = metadata({ lowAbsolute: null, hiAbsolute: null });
+
+    expect(isValueWithinReferenceRange(concepts, 'concept-uuid', 1000)).toBe(true);
+  });
+
+  it('accepts an empty value or a concept without metadata', () => {
+    expect(isValueWithinReferenceRange(metadata({ lowAbsolute: 10, hiAbsolute: 100 }), 'concept-uuid', '')).toBe(true);
+    expect(isValueWithinReferenceRange(metadata({}), 'another-concept-uuid', 5)).toBe(true);
   });
 });
