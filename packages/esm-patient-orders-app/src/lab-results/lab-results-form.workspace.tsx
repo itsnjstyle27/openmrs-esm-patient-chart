@@ -188,7 +188,7 @@ const LabResultsForm: React.FC<
       if (concept && completeLabResult && (isEditMode || hasSavedResults)) {
         if (isCoded(concept) && typeof completeLabResult?.value === 'object' && completeLabResult?.value?.uuid) {
           fillSavedValue(concept.uuid, completeLabResult.value.uuid);
-        } else if (isNumeric(concept) && completeLabResult?.value) {
+        } else if (isNumeric(concept) && completeLabResult?.value != null) {
           fillSavedValue(concept.uuid, parseFloat(completeLabResult.value as string));
         } else if (isText(concept) && completeLabResult?.value) {
           fillSavedValue(concept.uuid, completeLabResult?.value);
@@ -199,11 +199,11 @@ const LabResultsForm: React.FC<
             if (isCoded(member)) {
               value = typeof obs?.value === 'object' ? obs.value.uuid : obs?.value;
             } else if (isNumeric(member)) {
-              value = obs?.value ? parseFloat(obs.value as string) : undefined;
+              value = obs?.value != null ? parseFloat(obs.value as string) : undefined;
             } else if (isText(member)) {
               value = obs?.value;
             }
-            if (value) fillSavedValue(member.uuid, value);
+            if (value || value === 0) fillSavedValue(member.uuid, value);
           });
         }
       }

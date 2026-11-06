@@ -1055,6 +1055,68 @@ describe('LabResultsForm', () => {
     expect(saveButton).toBeDisabled();
   });
 
+  test('shows a saved numeric result of 0', async () => {
+    mockUseCompletedLabResultsArray.mockReturnValue({
+      completeLabResults: [{ uuid: 'saved-obs-uuid', concept: { uuid: 'concept-uuid' }, value: 0 } as Observation],
+      isLoading: false,
+      error: null,
+      mutate: vi.fn(),
+    });
+
+    render(<LabResultsForm {...testProps} />);
+
+    const input = await screen.findByLabelText(`Test Concept (0 - 100 mg/dL)`);
+    await waitFor(() => expect(input).toHaveValue(0));
+  });
+
+  test('shows a saved result of 0 for a member of a panel', async () => {
+    mockUseOrderConceptByUuids.mockReturnValue({
+      concepts: [
+        {
+          uuid: 'concept-uuid',
+          display: 'Test Panel',
+          set: true,
+          datatype: { display: 'N/A', hl7Abbreviation: 'ZZ' },
+          setMembers: [
+            {
+              uuid: 'member-uuid',
+              display: 'Member',
+              set: false,
+              datatype: { display: 'Numeric', hl7Abbreviation: 'NM' },
+              setMembers: [],
+              answers: [],
+              hiNormal: 100,
+              lowNormal: 0,
+              units: 'mg/dL',
+            },
+          ],
+          answers: [],
+        } as unknown as LabOrderConcept,
+      ],
+      isLoading: false,
+      error: null,
+      isValidating: false,
+      mutate: vi.fn(),
+    });
+    mockUseCompletedLabResultsArray.mockReturnValue({
+      completeLabResults: [
+        {
+          uuid: 'panel-obs-uuid',
+          concept: { uuid: 'concept-uuid' },
+          groupMembers: [{ uuid: 'member-obs-uuid', concept: { uuid: 'member-uuid' }, value: 0 }],
+        } as unknown as Observation,
+      ],
+      isLoading: false,
+      error: null,
+      mutate: vi.fn(),
+    });
+
+    render(<LabResultsForm {...testProps} />);
+
+    const input = await screen.findByLabelText(/^Member/);
+    await waitFor(() => expect(input).toHaveValue(0));
+  });
+
   test('refetches the saved results when saving the results fails', async () => {
     const user = userEvent.setup();
     const mockMutateResults = vi.fn();
