@@ -19,6 +19,6 @@ export function getConceptUnitsFromEncounter(encounter: Encounter | null, concep
 }
 
 export const withUnit = (value: string | number, unit: string | null | undefined) => {
-  if (!value || value === '--') return value;
+  if ((!value && value !== 0) || value === '--') return value;
   return unit ? `${value} ${unit}` : value;
 };

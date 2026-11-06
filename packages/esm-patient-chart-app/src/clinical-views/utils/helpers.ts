@@ -94,7 +94,7 @@ export function getConditionalConceptValue(
 export function getConceptFromMappings(encounter: Encounter, concepts: Array<string>) {
   for (const concept of concepts) {
     const obs = findObs(encounter, concept);
-    if (obs && obs.value) {
+    if (obs && obs.value != null && obs.value !== '') {
       return concept;
     }
   }
