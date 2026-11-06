@@ -153,9 +153,8 @@ export function getObsFromEncounter({
     return getEncounterProperty(encounter, type);
   }
 
-  if (secondaryConcept && typeof obs.value === 'object' && obs.value.names) {
-    const primaryValue = obs.value.name.display;
-    if (primaryValue === config.otherConceptUuid) {
+  if (secondaryConcept && typeof obs?.value === 'object' && obs.value?.names) {
+    if (obs.value.uuid === config.otherConceptUuid) {
       const secondaryObs = findObs(encounter, secondaryConcept);
       return secondaryObs ? secondaryObs.value : '--';
     }
