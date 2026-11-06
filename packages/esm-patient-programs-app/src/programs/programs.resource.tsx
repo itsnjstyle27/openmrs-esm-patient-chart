@@ -1,5 +1,5 @@
 import useSWR from 'swr';
-import { filter, includes, map, uniqBy } from 'lodash-es';
+import { filter, uniqBy } from 'lodash-es';
 import { openmrsFetch, restBaseUrl } from '@openmrs/esm-framework';
 import type { PatientProgram, Program, ProgramWorkflowState, ProgramsFetchResponse } from '../types';
 
@@ -37,9 +37,11 @@ export function useAvailablePrograms(enrollments?: Array<PatientProgram>) {
 
   const availablePrograms = data?.data?.results ?? null;
 
+  // A patient can enroll again in a program they have completed, so only an active enrollment rules a program out.
   const eligiblePrograms = filter(
     availablePrograms,
-    (program) => !includes(map(enrollments, 'program.uuid'), program.uuid),
+    (program) =>
+      !enrollments?.some((enrollment) => enrollment.program?.uuid === program.uuid && !enrollment.dateCompleted),
   );
 
   return {

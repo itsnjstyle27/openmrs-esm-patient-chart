@@ -103,4 +103,21 @@ describe('ProgramsOverview', () => {
     expect(screen.getByText(/enrolled in all programs/i)).toBeInTheDocument();
     expect(screen.getByText(/there are no more programs left to enroll this patient in/i)).toBeInTheDocument();
   });
+
+  it('lets the patient be enrolled again when one of their enrollments in all programs is completed', async () => {
+    const [completedEnrollment, ...activeEnrollments] = mockEnrolledInAllProgramsResponse;
+    mockOpenmrsFetch.mockReturnValueOnce({
+      data: {
+        results: [{ ...completedEnrollment, dateCompleted: '2020-04-14T00:00:00.000+0000' }, ...activeEnrollments],
+      },
+    });
+    mockOpenmrsFetch.mockReturnValueOnce({ data: { results: mockCareProgramsResponse } });
+
+    renderWithSwr(<ProgramsOverview {...testProps} />);
+
+    await waitForLoadingToFinish();
+
+    expect(screen.getByRole('button', { name: /add/i })).toBeEnabled();
+    expect(screen.queryByText(/enrolled in all programs/i)).not.toBeInTheDocument();
+  });
 });
